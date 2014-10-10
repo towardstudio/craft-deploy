@@ -4,7 +4,7 @@
 # Leave example files that can be renamed to get setup
 # @TODO - consider excluding dev and live database files.
 # ------------------------------------------------------------
-*/craft/config/local/*
+*/craft/config/local/
 
 
 # IMAGE FOLDERS
@@ -16,8 +16,7 @@
 # It's probably safe to ignore the following in the storage folders.
 # The rest of the items in the storage folder are up to us...
 # ------------------------------------------------------------
-*/craft/storage/runtime/*
-*/craft/storage/backups/*
+*/craft/storage/*
 
 
 # MISC FILES
@@ -35,3 +34,4 @@ _notes
 dwsync.xml
 logs/*
 node_modules
+db_backups

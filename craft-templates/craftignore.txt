@@ -1,0 +1,13 @@
+/cap
+Capfile
+Gemfile
+Gemfile.lock
+readme.md
+.gitattributes
+.gitignore
+.gitmodules
+*.scss
+*.coffee
+gruntfile.js
+bower.json
+package.json
