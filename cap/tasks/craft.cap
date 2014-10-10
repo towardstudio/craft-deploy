@@ -1,9 +1,9 @@
 namespace :craft do
 
-	desc "Download latest version of craft and set up directory structure"
-	task :install do
+	desc "Set up directory structure on remote server"
+	task :setup do
 		on roles(:app) do
-			# execute "curl -O http://buildwithcraft.com/latest.zip?accept_license=yes"
+			execute "mkdir #{fetch(:deploy_to)}/{releases,shared}"
 		end
 	end
 
