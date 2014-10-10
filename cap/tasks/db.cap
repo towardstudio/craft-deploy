@@ -1,0 +1,77 @@
+namespace :db do
+
+	desc "Creates a sensible backup name for SQL files"
+	task :backup_name do
+  		on roles(:app) do
+			now = Time.now
+			execute "mkdir -p #{shared_path}/db_backups"
+			backup_time = [now.year,now.month,now.day,now.hour,now.min,now.sec].join()
+			set :backup_filename, backup_time
+			set :backup_file, "#{shared_path}/db_backups/#{backup_time}.sql"
+		end
+	end
+
+	desc "Takes a database dump from remote server"
+	task :backup do
+		invoke 'db:backup_name'
+		on roles(:app) do
+			within release_path do
+				execute "mysqldump -u remote_db_user -premote_db_password remote_db_name > #{fetch(:backup_file)}"
+			end
+
+			system('mkdir -p db_backups')
+			download! "#{fetch(:backup_file)}", "db_backups/#{fetch(:backup_filename)}.sql"
+
+			within release_path do   
+				execute :rm, "#{fetch(:backup_file)}"
+			end
+		end
+	end
+
+	desc "Imports the remote database into your local environment"
+	task :pull do
+		invoke 'db:backup'
+		on roles(:app) do	
+			run_locally do
+				execute "mysql -u local_db_user -plocal_db_password local_db_name < db_backups/#{fetch(:backup_filename)}.sql"
+				execute "rm -r db_backups/#{fetch(:backup_filename)}.sql"
+
+				if Dir['db_backups/*'].empty?
+					execute "rm -r db_backups"
+				end
+			end
+		end
+	end
+
+	desc "Imports the local database into your remote environment"
+	task :push do
+
+		on roles(:app) do	
+
+			now = Time.now
+			backup_time = [now.year,now.month,now.day,now.hour,now.min,now.sec].join()
+			set :backup_filename, backup_time
+			set :backup_file, "db_backups/#{backup_time}.sql"
+			
+			run_locally do	
+				execute "mkdir -p db_backups"
+				execute "mysqldump -u local_db_user -plocal_db_password local_db_name > #{fetch(:backup_file)}"
+			end
+
+			upload! "db_backups/#{fetch(:backup_filename)}.sql", "#{fetch(:backup_file)}"
+
+			within release_path do
+				execute "mysql -u remote_db_user -premote_db_password remote_db_name < #{fetch(:backup_file)}"
+				execute "rm #{fetch(:backup_file)}"
+			end
+
+			run_locally do
+				execute "rm db_backups/#{fetch(:backup_filename)}.sql"
+				if Dir['db_backups/*'].empty?
+					execute "rm -r db_backups"
+				end
+			end
+		end
+	end
+
+end

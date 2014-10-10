@@ -1,0 +1,10 @@
+namespace :craft do
+
+	desc "Download latest version of craft and set up directory structure"
+	task :install do
+		on roles(:app) do
+			# execute "curl -O http://buildwithcraft.com/latest.zip?accept_license=yes"
+		end
+	end
+
+end

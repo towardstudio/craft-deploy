@@ -2,20 +2,11 @@
 lock '3.1.0'
 
 ############################################
-# Setup WordPress
-############################################
-
-set :wp_user, "admin" # The admin username
-set :wp_email, "paul@bluegg.co.uk" # The admin email address
-set :wp_sitename, "Ballet Cymru" # The site title
-set :wp_localurl, "http://balletcymru.dev" # Your local environment URL
-
-############################################
 # Setup project
 ############################################
 
-set :application, "wp-deploy"
-set :repo_url, "git@bitbucket.org:paulgoodfield/ballet-cymru.git"
+set :application, "craft-deploy"
+set :repo_url, "git@bitbucket.org:user/repo.git"
 set :scm, :git
 
 set :git_strategy, SubmoduleStrategy
@@ -28,7 +19,7 @@ set :log_level, :info
 set :use_sudo, false
 
 set :ssh_options, {
-  forward_agent: true
+	forward_agent: true
 }
 
 set :keep_releases, 5
