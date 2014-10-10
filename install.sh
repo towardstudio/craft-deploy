@@ -18,4 +18,4 @@ cp craft-templates/db.php craft/config/db.php
 cp craft-templates/general.php craft/config/general.php
 cp craft-templates/gitignore.txt .gitignore
 
-rm craft-templates
+rm -rf craft-templates
