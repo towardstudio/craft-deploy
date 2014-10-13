@@ -4,7 +4,23 @@ namespace :craft do
 	task :setup do
 		on roles(:app) do
 			execute "mkdir #{fetch(:deploy_to)}/{releases,shared}"
+			execute "chown #{fetch(:deploy_as)}/{releases, shared}"
+			execute "chmod g+s #{fetch(:deploy_to)}"
+			execute "mkdir #{fetch(:deploy_to)}/shared/assets"
+			execute "mkdir #{fetch(:deploy_to)}/shared/craft"
+			execute "mkdir #{fetch(:deploy_to)}/shared/craft/storage"
 		end
+	end
+
+	desc "Upload craft shared content"
+	task :sync_shared do
+		# run_locally do
+		# 	roles(:all).each do |role|
+		# 		execute :rsync, "-avzO #{role.user}@#{role.hostname}:#{shared_path}/assets/ public_html/assets"
+		# 		execute :rsync, "-avzO public_html/assets/ #{role.user}@#{role.hostname}:#{shared_path}/assets"
+		# 	end
+		# end
+		upload! "craft/app", "#{shared_path}/craft/app"
 	end
 
 end
