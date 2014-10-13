@@ -17,6 +17,7 @@ set :git_strategy, SubmoduleStrategy
 
 set :log_level, :info
 set :use_sudo, false
+set :deploy_as, 'user:group'
 
 set :ssh_options, {
 	forward_agent: true,
