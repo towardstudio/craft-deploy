@@ -3,24 +3,33 @@ namespace :craft do
 	desc "Set up directory structure on remote server"
 	task :setup do
 		on roles(:app) do
-			execute "mkdir #{fetch(:deploy_to)}/{releases,shared}"
-			execute "chown #{fetch(:deploy_as)}/{releases, shared}"
+			# Setup directory structure on server
+			execute "mkdir #{fetch(:deploy_to)}{releases,shared}"
+			execute "chown #{fetch(:deploy_as)} #{fetch(:deploy_to)}"
 			execute "chmod g+s #{fetch(:deploy_to)}"
-			execute "mkdir #{fetch(:deploy_to)}/shared/assets"
-			execute "mkdir #{fetch(:deploy_to)}/shared/craft"
-			execute "mkdir #{fetch(:deploy_to)}/shared/craft/storage"
+			execute "mkdir #{fetch(:deploy_to)}shared/assets"
+			execute "mkdir #{fetch(:deploy_to)}shared/craft"
+			execute "mkdir #{fetch(:deploy_to)}shared/craft/storage"
+
+			# Download craft and move app directory into shared
+			execute "wget http://buildwithcraft.com/latest.zip?accept_license=yes"
+			execute "mv latest.zip?accept_license=yes #{fetch(:deploy_to)}latest.zip"
+			execute "cd #{fetch(:deploy_to)}"
+			execute "unzip #{fetch(:deploy_to)}latest.zip -d #{fetch(:deploy_to)}craft-zip"
+			execute "rm #{fetch(:deploy_to)}latest.zip"
+			execute "mv #{fetch(:deploy_to)}craft-zip/craft/app #{shared_path}/craft/app"
+			execute "rm -R #{fetch(:deploy_to)}craft-zip"
 		end
 	end
 
-	desc "Upload craft shared content"
-	task :sync_shared do
-		# run_locally do
-		# 	roles(:all).each do |role|
-		# 		execute :rsync, "-avzO #{role.user}@#{role.hostname}:#{shared_path}/assets/ public_html/assets"
-		# 		execute :rsync, "-avzO public_html/assets/ #{role.user}@#{role.hostname}:#{shared_path}/assets"
-		# 	end
-		# end
-		upload! "craft/app", "#{shared_path}/craft/app"
+	desc "Sync assets folder between local and remote"
+	task :sync_assets do
+		run_locally do
+			roles(:all).each do |role|
+				execute :rsync, "-avzO #{role.user}@#{role.hostname}:#{shared_path}/assets/ public_html/assets"
+				execute :rsync, "-avzO public_html/assets/ #{role.user}@#{role.hostname}:#{shared_path}/assets"
+			end
+		end
 	end
 
 end
