@@ -16,7 +16,7 @@ namespace :db do
 		invoke 'db:backup_name'
 		on roles(:app) do
 			within release_path do
-				execute "mysqldump -u remote_db_user -premote_db_password remote_db_name > #{fetch(:backup_file)}"
+				execute "mysqldump -u #{fetch(:db_user)} -p#{fetch(:db_password)} #{fetch(:db_name)} > #{fetch(:backup_file)}"
 			end
 
 			system('mkdir -p db_backups')
@@ -33,7 +33,7 @@ namespace :db do
 		invoke 'db:backup'
 		on roles(:app) do	
 			run_locally do
-				execute "mysql -u local_db_user -plocal_db_password local_db_name < db_backups/#{fetch(:backup_filename)}.sql"
+				execute "mysql -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} < db_backups/#{fetch(:backup_filename)}.sql"
 				execute "rm -r db_backups/#{fetch(:backup_filename)}.sql"
 
 				if Dir['db_backups/*'].empty?
@@ -55,16 +55,16 @@ namespace :db do
 			
 			run_locally do	
 				execute "mkdir -p db_backups"
-				execute "mysqldump -u local_db_user -plocal_db_password local_db_name > #{fetch(:backup_file)}"
+				execute "mysqldump -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} > #{fetch(:backup_file)}"
 			end
 
 			upload! "db_backups/#{fetch(:backup_filename)}.sql", "#{fetch(:backup_file)}"
 
 			within release_path do
-				execute "mysql -u remote_db_user -premote_db_password remote_db_name < #{fetch(:backup_file)}"
+				execute "mysql -u #{fetch(:db_user)} -p#{fetch(:db_password)} #{fetch(:db_name)} < #{fetch(:backup_file)}"
 				execute "rm #{fetch(:backup_file)}"
 			end
-
+			
 			run_locally do
 				execute "rm db_backups/#{fetch(:backup_filename)}.sql"
 				if Dir['db_backups/*'].empty?

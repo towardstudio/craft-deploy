@@ -12,6 +12,15 @@ set :scm, :git
 set :git_strategy, SubmoduleStrategy
 
 ############################################
+# Local db details
+############################################
+
+set :local_db_host, "[db_host]"
+set :local_db_name, "[db_name]"
+set :local_db_user, "[db_user]"
+set :local_db_password, "[db_password]"
+
+############################################
 # Setup Capistrano
 ############################################
 
