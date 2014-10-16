@@ -3,11 +3,53 @@ namespace :db do
 	desc "Creates a sensible backup name for SQL files"
 	task :backup_name do
   		on roles(:app) do
-			now = Time.now
-			execute "mkdir -p #{shared_path}/db_backups"
+  			now = Time.now
 			backup_time = [now.year,now.month,now.day,now.hour,now.min,now.sec].join()
 			set :backup_filename, backup_time
-			set :backup_file, "#{shared_path}/db_backups/#{backup_time}.sql"
+			set :remote_backup_file, "#{fetch(:deploy_to)}db_backups/#{backup_time}.sql"
+			set :local_backup_file, "db_backups/local/#{backup_time}.sql"
+
+			set :curr_stage, 'staging'
+			if fetch(:stage) != :staging then
+				set :curr_stage, 'production'
+			end
+		end
+	end
+
+	desc 'Clean up old db backups from remote'
+	task :cleanup_remote do
+		on roles(:app) do
+			backups = capture(:ls, '-x', "#{fetch(:deploy_to)}db_backups").split
+			if backups.count > fetch(:keep_db_backups)
+				files = (backups - backups.last(fetch(:keep_db_backups)))
+				if files.any?
+					files_str = files.map do |backup|
+						"#{fetch(:deploy_to)}db_backups/" + backup
+					end.join(" ")
+					execute :rm, '-rf', files_str
+				end
+			end
+		end
+	end
+
+	desc 'Clean up old db backups from local'
+	task :cleanup_local do
+		on roles(:app) do
+			run_locally do
+				envs = ['local', 'staging', 'production']
+				envs.each do |env|
+					backups = capture(:ls, '-x', "db_backups/" + env).split
+					if backups.count > fetch(:keep_db_backups)
+						files = (backups - backups.first(fetch(:keep_db_backups)))
+						if files.any?
+							files_str = files.map do |backup|
+								"db_backups/" + env + '/' + backup
+							end.join(" ")
+							execute :rm, '-rf', files_str
+						end
+					end
+				end
+			end
 		end
 	end
 
@@ -15,63 +57,50 @@ namespace :db do
 	task :backup do
 		invoke 'db:backup_name'
 		on roles(:app) do
-			within release_path do
-				execute "mysqldump -u #{fetch(:db_user)} -p#{fetch(:db_password)} #{fetch(:db_name)} > #{fetch(:backup_file)}"
-			end
-
-			system('mkdir -p db_backups')
-			download! "#{fetch(:backup_file)}", "db_backups/#{fetch(:backup_filename)}.sql"
-
-			within release_path do   
-				execute :rm, "#{fetch(:backup_file)}"
-			end
+			execute "mysqldump -u #{fetch(:db_user)} -p#{fetch(:db_password)} #{fetch(:db_name)} > #{fetch(:remote_backup_file)}"
+			download! "#{fetch(:remote_backup_file)}", "db_backups/#{fetch(:curr_stage)}/#{fetch(:backup_filename)}.sql"
 		end
 	end
+	after :backup, :cleanup_remote
 
 	desc "Imports the remote database into your local environment"
 	task :pull do
+		# Create dump of remote db
 		invoke 'db:backup'
 		on roles(:app) do	
 			run_locally do
-				execute "mysql -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} < db_backups/#{fetch(:backup_filename)}.sql"
-				execute "rm -r db_backups/#{fetch(:backup_filename)}.sql"
-
-				if Dir['db_backups/*'].empty?
-					execute "rm -r db_backups"
-				end
+				# Create dump of current local db
+				execute "mysqldump -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} > #{fetch(:local_backup_file)}"
+				# Import remote db into local
+				execute "mysql -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} < db_backups/#{fetch(:curr_stage)}/#{fetch(:backup_filename)}.sql"
 			end
 		end
 	end
+	after :pull, :cleanup_local
 
 	desc "Imports the local database into your remote environment"
 	task :push do
-
-		on roles(:app) do	
-
-			now = Time.now
-			backup_time = [now.year,now.month,now.day,now.hour,now.min,now.sec].join()
-			set :backup_filename, backup_time
-			set :backup_file, "db_backups/#{backup_time}.sql"
-			
-			run_locally do	
-				execute "mkdir -p db_backups"
-				execute "mysqldump -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} > #{fetch(:backup_file)}"
-			end
-
-			upload! "db_backups/#{fetch(:backup_filename)}.sql", "#{fetch(:backup_file)}"
-
-			within release_path do
-				execute "mysql -u #{fetch(:db_user)} -p#{fetch(:db_password)} #{fetch(:db_name)} < #{fetch(:backup_file)}"
-				execute "rm #{fetch(:backup_file)}"
-			end
-			
+		# Create dump of remote db
+		invoke 'db:backup'
+		on roles(:app) do
+			# Create dump of local db
 			run_locally do
-				execute "rm db_backups/#{fetch(:backup_filename)}.sql"
-				if Dir['db_backups/*'].empty?
-					execute "rm -r db_backups"
-				end
+				execute "mysqldump -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} > #{fetch(:local_backup_file)}"
+			end
+
+			local_uploaded_file = "#{fetch(:deploy_to)}db_backups/local-#{fetch(:backup_filename)}.sql"
+			# Upload local dump to remote
+			upload! "#{fetch(:local_backup_file)}", "#{local_uploaded_file}"
+			# Overwrite remote db from uploaded file
+			execute "mysql -u #{fetch(:db_user)} -p#{fetch(:db_password)} #{fetch(:db_name)} < #{local_uploaded_file}"
+			# Remove uploaded file
+			execute "rm #{local_uploaded_file}"
+
+			run_locally do
+				execute "rm #{fetch(:local_backup_file)}"
 			end
 		end
 	end
+	after :push, :cleanup_local
 
 end

@@ -10,6 +10,7 @@ namespace :craft do
 			execute "mkdir #{fetch(:deploy_to)}shared/assets"
 			execute "mkdir #{fetch(:deploy_to)}shared/craft"
 			execute "mkdir #{fetch(:deploy_to)}shared/craft/storage"
+			execute "mkdir#{fetch(:deploy_to)}db_backups"
 
 			# Download craft and move app directory into shared
 			execute "wget http://buildwithcraft.com/latest.zip?accept_license=yes"

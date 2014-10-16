@@ -34,6 +34,7 @@ set :ssh_options, {
 }
 
 set :keep_releases, 3
+set :keep_db_backups, 3
 
 ############################################
 # Linked files and directories (symlinks)

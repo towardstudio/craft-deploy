@@ -24,3 +24,8 @@ cp craft-templates/gitignore.txt .gitignore
 cp craft-templates/craftignore.txt .craftignore
 
 rm -rf craft-templates
+
+mkdir db_backups
+mkdir db_backups/local
+mkdir db_backups/staging
+mkdir db_backups/production
