@@ -4,7 +4,7 @@ namespace :db do
 	task :backup_name do
   		on roles(:app) do
   			now = Time.now
-			backup_time = [now.year,now.month,now.day,now.hour,now.min,now.sec].join()
+			backup_time = [now.year,now.strftime("%m"),now.strftime("%d"),now.strftime("%H"),now.strftime("%M"),now.strftime("%S")].join('-')
 			set :backup_filename, backup_time
 			set :remote_backup_file, "#{fetch(:deploy_to)}db_backups/#{backup_time}.sql"
 			set :local_backup_file, "db_backups/local/#{backup_time}.sql"
@@ -40,7 +40,7 @@ namespace :db do
 				envs.each do |env|
 					backups = capture(:ls, '-x', "db_backups/" + env).split
 					if backups.count > fetch(:keep_db_backups)
-						files = (backups - backups.first(fetch(:keep_db_backups)))
+						files = (backups - backups.last(fetch(:keep_db_backups)))
 						if files.any?
 							files_str = files.map do |backup|
 								"db_backups/" + env + '/' + backup
@@ -62,6 +62,7 @@ namespace :db do
 		end
 	end
 	after :backup, :cleanup_remote
+	after :cleanup_remote, :cleanup_local
 
 	desc "Imports the remote database into your local environment"
 	task :pull do
@@ -75,8 +76,8 @@ namespace :db do
 				execute "mysql -u #{fetch(:local_db_user)} -p#{fetch(:local_db_password)} #{fetch(:local_db_name)} < db_backups/#{fetch(:curr_stage)}/#{fetch(:backup_filename)}.sql"
 			end
 		end
+		Rake::Task['db:cleanup_local'].execute
 	end
-	after :pull, :cleanup_local
 
 	desc "Imports the local database into your remote environment"
 	task :push do
@@ -100,7 +101,7 @@ namespace :db do
 				execute "rm #{fetch(:local_backup_file)}"
 			end
 		end
+		Rake::Task['db:cleanup_local'].execute
 	end
-	after :push, :cleanup_local
 
 end
