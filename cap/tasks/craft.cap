@@ -4,13 +4,13 @@ namespace :craft do
 	task :setup do
 		on roles(:app) do
 			# Setup directory structure on server
-			execute "mkdir #{fetch(:deploy_to)}{releases,shared}"
-			execute "chown #{fetch(:deploy_as)} #{fetch(:deploy_to)}"
-			execute "chmod g+s #{fetch(:deploy_to)}"
-			execute "mkdir #{fetch(:deploy_to)}shared/assets"
-			execute "mkdir #{fetch(:deploy_to)}shared/craft"
-			execute "mkdir #{fetch(:deploy_to)}shared/craft/storage"
-			execute "mkdir #{fetch(:deploy_to)}db_backups"
+			execute "mkdir -p #{fetch(:deploy_to)}{releases,shared}"
+			# execute "chown #{fetch(:deploy_as)} #{fetch(:deploy_to)}"
+			# execute "chmod g+s #{fetch(:deploy_to)}"
+			execute "mkdir -p #{fetch(:deploy_to)}shared/assets"
+			execute "mkdir -p #{fetch(:deploy_to)}shared/craft"
+			execute "mkdir -p #{fetch(:deploy_to)}shared/craft/storage"
+			execute "mkdir -p #{fetch(:deploy_to)}db_backups"
 
 			# Download craft and move app directory into shared
 			execute "wget http://buildwithcraft.com/latest.zip?accept_license=yes"
@@ -27,10 +27,22 @@ namespace :craft do
 	task :sync_assets do
 		run_locally do
 			roles(:all).each do |role|
-				execute :rsync, "-avzO #{role.user}@#{role.hostname}:#{shared_path}/assets/ public_html/assets"
-				execute :rsync, "-avzO public_html/assets/ #{role.user}@#{role.hostname}:#{shared_path}/assets"
+				execute :rsync, "-vzO root@#{role.hostname}:#{shared_path}/assets/ public_html/assets"
+				execute :rsync, "-vzO public_html/assets/ root@#{role.hostname}:#{shared_path}/assets"
 			end
 		end
+	end
+
+	desc "Pull everything down from an environment (db and assets)"
+	task :pull do
+		invoke 'db:pull'
+		invoke 'craft:sync_assets'
+	end
+
+	desc "Push everything to an environment (db and assets)"
+	task :push do
+		invoke 'db:push'
+		invoke 'craft:sync_assets'
 	end
 
 end
