@@ -97,6 +97,8 @@ cap production deploy
 
 Hopefully, everything should go smoothly and Capistrano will do its thing. Problems here are usually related to ssh access to the web server or your Git repo.
 
+- - -
+
 ## Tasks
 
 Alongside Capistranos [various tasks](http://capistranorb.com/), Craft Deploy adds some useful commands for working with Craft websites.
