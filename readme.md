@@ -10,20 +10,24 @@ A framework for deploying Craft websites with Capistrano 3.
 - Simple boilerplate for Craft, inspired by https://github.com/imjakechapman/CraftCMS-Boilerplate
 - Installs latest version of Craft
 
+- - -
+
 ## Requirements
 
 - wget installed on local machine.
 - command-line access to 'mysqldump' on your local machine.
 - a server with appropriate packages installed, with ssh access.
 
+- - -
+
 ## Installation
 
 First thing is to clone this repo to your local machine:
 
-`
+```sh
 cd my/desired/directory
 git clone https://github.com/Bluegg/craft-deploy
-`
+```
 
 ### 1. Run install script
 
@@ -37,7 +41,9 @@ Craft Deploy contains a bash script that does the initial setup:
 
 Run this (on OS X or Linux) with:
 
-`bash install.sh`
+```sh
+bash install.sh
+```
 
 Feel free to remove this file afterwards, as its no longer required. 
 
@@ -47,9 +53,8 @@ Feel free to remove this file afterwards, as its no longer required.
 
 From there, you can go ahead and install Craft locally. This framework contains a basic setup for managing different Craft environments, by default it assumes 'local', 'staging' and 'live' environments. To configure your local Craft environment, you will find the config in /craft/config/local/db.php. Here, you enter your 'local' database connection strings.
 
-```
+```php
 return array(
-
 	// The database server name or IP address. Usually this is 'localhost' or '127.0.0.1'.
 	'server' => 'localhost',
 	// The database username to connect with.
@@ -67,31 +72,27 @@ The local config files are .gitignore'd and so will not be deployed or contained
 
 You will also need to enter the same connection strings in the Capistrano config, found in /cap/deploy.rb:
 
-```
+```ruby
 set :local_db_host, "[db_host]"
 set :local_db_name, "[db_name]"
 set :local_db_user, "[db_user]"
 set :local_db_password, "[db_password]"
 ```
 
-- - -
-
 ### 3. Set up Git
 
 Your Craft website must be in a Git repo somewhere that is accessible from your web server (via ssh) and your local machine. We use private repos on Bitbucket, with access provided via ssh. Make sure your Git repo is referenced in /cap/deploy.rb along with ssh credentials.
-
-- - -
 
 ### 4. Configure your server
 
 For Craft Deploy to work, you must have 'passwordless login' ssh access to your webserver. You also need to make sure Git and mysql works on the server, along with any requirements of Craft itself. You will need to create the database on your server, with relevant connection strings entered in both the Craft and Capistrano config files. Adding a task to create remote databases as part of the installation phase is on our roadmap.
 
-- - -
-
 ### 5. Deploy
 
 If everything is set up correctly, you can do your first deployment. To deploy to your production environment:
 
-````cap production deploy```
+```sh
+cap production deploy
+```
 
 Hopefully, everything should go smoothly and Capistrano will do its thing. Problems here are usually related to ssh access to the web server or your Git repo.
