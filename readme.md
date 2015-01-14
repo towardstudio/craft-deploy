@@ -96,3 +96,39 @@ cap production deploy
 ```
 
 Hopefully, everything should go smoothly and Capistrano will do its thing. Problems here are usually related to ssh access to the web server or your Git repo.
+
+## Tasks
+
+Alongside Capistranos [various tasks](http://capistranorb.com/), Craft Deploy adds some useful commands for working with Craft websites.
+
+### Databases
+
+Craft deploy can push and pull databases (via mysqldump) between environments:
+
+```sh
+cap production db:push
+```
+
+or
+
+```sh
+cap production db:pull
+```
+
+### Assets
+
+Craft Deploy uses rsync to synchronise assets between enviroments:
+
+```sh
+cap production craft:sync_assets
+```
+
+For convenience, you can push or pull both databases and sync assets with a single command:
+
+```sh
+cap production craft:push
+```
+
+```sh
+cap production craft:pull
+```
