@@ -89,6 +89,12 @@ For Craft Deploy to work, you must have 'passwordless login' ssh access to your 
 
 ### 5. Deploy
 
+Before deploying, we need to run a setup task which will install Craft on your server and create the directories needed:
+
+```sh
+cap production craft:setup
+```
+
 If everything is set up correctly, you can do your first deployment. To deploy to your production environment:
 
 ```sh
